@@ -1,0 +1,368 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts,xspace}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{cuted}
+\usepackage{multicol}
+\usepackage{booktabs, array, adjustbox}
+\usepackage[table]{xcolor}
+\usepackage{import}
+\usepackage{multirow}
+
+\title{Optimality of Feature set for Intrusion Detection System}
+
+\author{\IEEEauthorblockN{Studen1t\IEEEauthorrefmark{1}, Studen1t\IEEEauthorrefmark{2}, Studen1t\IEEEauthorrefmark{3}}
+\IEEEauthorblockA{\textit{School of Electrical Engineering and Informatics}\\
+\textit{Institut Teknologi Bandug}\\
+Bandung, Indonesia\\
+Email: \{\IEEEauthorrefmark{1}132xxx, \IEEEauthorrefmark{2}132xxx, \IEEEauthorrefmark{3}132xxx\}@students.itb.ac.id}}
+
+\renewcommand{\IEEEkeywordsname}{Keywords}
+\renewcommand{\figurename}{Gambar}
+\renewcommand{\tablename}{Tabel}
+
+\graphicspath{{./gambar/}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    Sistem deteksi intrusi (IDS) menjadi sangat diperlukan dengan kebutuhan keamanan yang muncul dalam sistem jaringan komputer. Teknik deteksi konvensional, seperti deteksi intrusi berbasis tanda tangan dan aturan, memerlukan intervensi manusia secara teratur atau membiarkan penyusupan tidak terdeteksi. Untungnya, deteksi melalui \emph{Machine Learning} (ML) bebas dari kekurangan tersebut. Namun, pemilihan fitur yang paling signifikan dan prediktif merupakan tantangan. Komunitas riset cukup aktif dalam pemilihan subset fitur terbaik di IDS. Namun, ada kekurangan prosedur pemilihan terstruktur dan daftar fitur yang berurutan. Kami berusaha memberikan daftar fitur yang lebih konkret mengenai signifikansinya dalam memprediksi intrusi. Kami melakukan survei dan mengikuti metodologi terstruktur dalam pemilihan fitur dari kumpulan data NSL-KDD yang dipublikasikan. Prosedur pemilihan fitur terdiri dari lima langkah. Tiga langkah pertama didedikasikan untuk menghilangkan fitur-fitur sepele, sedangkan dua langkah terakhir dilakukan untuk mengidentifikasi fitur-fitur yang berguna. Pembuatan model dilakukan dengan menggunakan \emph{Support Vector Machine} (SVM) agar dapat diterima secara luas di komunitas riset IDS. Hasilnya terdiri dari daftar fitur yang diurutkan. Fitur diurutkan sesuai kemampuan prediktifnya dalam mengklasifikasikan lalu lintas jaringan berbahaya dan jinak.
+\end{abstract}
+
+\begin{IEEEkeywords}
+    Pilihan subset fitur, sistem berbasis \emph{Host}, \emph{Intrusion detection system}, \emph{Machine learning}
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+\emph{Intrusion Detection System} (IDS) merupakan komponen penting dalam memastikan infrastruktur jaringan. Selama dekade terakhir, masalah keamanan mendapatkan fokus yang signifikan karena intrusi jaringan yang berlebihan seperti yang dilaporkan oleh \emph{Computer Emergency Response Team} (CERT). Intrusi ini melahirkan bencana dan secara luas melanggar keamanan, yaitu, \emph{Confidentiality}, \emph{Integrity}, dan \emph{Availability} (CIA). Komunitas peneliti cukup aktif dalam menangani isu-isu terkait di IDS. Dengan munculnya persyaratan keamanan dalam sistem jaringan komputer, isu-isu yang berkaitan dengan mengatasi ancaman terhadap keamanan jaringan dan informasi bahkan lebih kandidat untuk ditangani. Meskipun ada sejumlah literatur yang ada untuk mensurvei IDS dan taksonominya~\cite{soni2015survey, denning1987intrusion, lunt1993survey, mukherjee1994network, xie2011anomaly, garcia2009anomaly}.
+
+Seperti yang didefinisikan oleh \emph{National Institute of Standards and Technology} (NIST) ~\cite{bace2001intrusion} Intrusi adalah upaya untuk kompromi salah satu atau semua faktor CIA. Sedangkan deteksi bertujuan untuk memantau adanya penyusupan. Hal yang sama berlaku untuk komunikasi kabel dan nirkabel. \cite{pelechrinis2010denial, tan2011analysis}. IDS adalah perangkat lunak atau perangkat keras atau keduanya untuk secara otomatis melakukan deteksi intrusi dalam lalu lintas jaringan ~\cite{bace2001intrusion, stavroulakis2010handbook}. Selain IDS, \emph{intrusion prevision system} (IPS) berupaya mencegah terjadinya peristiwa intrusi. IPS bekerja dengan IDS dan komunitas menggunakannya secara bergantian. Namun, IPS berada di luar cakupan penelitian ini.
+
+IDS secara luas dapat diklasifikasikan menjadi dua kelas; \emph{Signature-based Detection} (SD), \emph{Machine Learning-based Detection} (MLD). SD adalah metode yang relatif sederhana dan sama efektifnya untuk mendeteksi serangan atau ancaman yang diketahui. Proses membandingkan pola yang disimpan dengan kejadian yang sedang diuji. Namun, teknik ini tidak mampu mendeteksi serangan yang tidak diketahui, dengan persyaratan tambahan untuk menyimpan tanda tangan. Padahal, MLD cukup efektif dalam mengidentifikasi intrusi yang tidak diketahui, namun teknik ini tidak rentan terhadap \emph{false positive} ~\cite{fragkiadakis2012design, mar2012intelligent, kartit2012new, modi2013survey}.
+
+Klasifikasi ortogonal lain dari IDS adalah deteksi intrusi berbasis \emph{host} (HIDS) dan deteksi intrusi berbasis jaringan (NIDS). HIDS memvisualisasikan perilaku \emph{host} yang berisi informasi sensitif. Sedangkan, NIDS menganalisis aktivitas aplikasi/protokol dan mengevaluasi segmen jaringan tertentu untuk mengidentifikasi kejadian yang tidak dapat dipercaya.
+
+Pencegahan positif palsu (FP) dan negatif palsu (FN) sambil menjaga tingkat akurasi yang optimal adalah tantangan utama dari setiap sistem IDS. FP terjadi ketika IDS salah mengklasifikasikan aktivitas yang sah sebagai berbahaya, sedangkan FN terjadi ketika IDS tidak dapat mengenali kejadian buruk. ~\cite{stavroulakis2010handbook, elshoush2011alert, shanbhag2009accurate}. Baru-baru ini, Ho dkk. ~\cite{ho2012statistical} kumpulkan kasus \emph{False Positive} (FP) dan \emph{False Negative} (FN) dari lalu lintas dunia nyata.
+
+Sayangnya, SD mencakup serangan yang jauh lebih sedikit daripada jumlah alarm palsu yang muncul. Hal ini memungkinkan intrusi nyata tidak terdeteksi. Selain itu, kebisingan tambahan dapat sangat menurunkan kinerja SD. Pemeliharaan dan pembaruan selalu diperlukan untuk SD agar tanda tangan selalu terbarui dengan ancaman baru. Selain itu serangan berbasis Protokol dapat menyebabkan IDS berbasis SD gagal.
+
+
+
+\begin{figure*}
+    \begin{center}
+    \input{gambar/Metodologi pemilihan fitur.pdf_tex}
+    \caption{Metodologi pemilihan fitur}
+    \label{fig1}
+    \end{center}
+\end{figure*}
+
+Untungnya, di sinilah IDS berbasis ML berperan. IDS berbasis ML memungkinkan komputer untuk berlatih dan bertindak tanpa bantuan manusia. Ini "mempelajari" pola spesifik jaringan dan dapat menentukan adanya intrusi. Ia mampu mengidentifikasi jenis intrusi yang tidak diketahui sebelumnya, sehingga rentan terhadap alarm palsu juga. Kami mengajarkan model ML untuk membedakan antara paket jinak dan paket berbahaya dalam lalu lintas. Selain itu, ia dapat menangani serangan yang dipelajari sebelumnya dengan cukup efektif dan juga dapat mengenali mutan dari serangan yang diketahui ini. Dengan memperhatikan kelebihan di atas, banyak penelitian telah melakukan deteksi intrusi menggunakan ML, oleh karena itu mendukung kelayakan IDS berbasis ML. Namun, pemilihan fitur yang paling signifikan dan prediktif merupakan tantangan. Yang merupakan masalah utama yang dibahas dalam makalah ini.
+
+Sisa makalah ini disusun sebagai berikut: Bagian II menyajikan tinjauan pustaka bidang ini diikuti oleh Bagian III yang menguraikan proses pemilihan dan penyaringan fitur. Akhirnya, kesimpulan dan kemungkinan masalah yang akan dibahas di masa depan diuraikan dalam Bagian IV.
+
+\section{Literature Review}
+
+Komunitas riset cukup aktif dalam mengidentifikasi/memilih fitur terbaik untuk meningkatkan IDS. Namun, ada kekurangan prosedur seleksi terstruktur dan daftar fitur yang teratur. Di sini kami membahas secara singkat beberapa penelitian yang berfokus pada pemilihan subset fitur terbaik di IDS.
+
+Jain dkk. \cite{jain1997feature} melaporkan bahwa dalam kumpulan data besar, pendekatan berurutan maju berkinerja lebih baik. Padahal, penelitian lain yang dilakukan oleh Kudo dan Sklansky \cite{kudo2000comparison} menemukan efektivitas metode acak. Ketika datang ke pemilihan fitur skala besar, metode ini cukup mahal secara komputasi. Untuk kriteria evaluasi, \emph{Support Vector Machine} (SVM) dihargai karena mengatasi minimal lokal. Weston \cite{grandvalet2002adaptive} menerapkan SVM untuk pemilihan fitur berdasarkan penemuan fitur yang meminimalkan batasan pada kesalahan \emph{leave-one-out}. Setelah itu, Guyon dkk. \cite{guyon2002gene} menggunakan SVM berdasarkan Penghapusan Fitur Rekursif. Secara khusus, di IDS, Vapnik \cite{vapink1995nature} melaporkan kinerja yang lebih baik dari SVM untuk akselerasinya dalam pembuatan model dan pelaporan.
+\cite{10.1016/j.cose.2009.01.001} telah memperkenalkan pendekatan berbasis \emph{wrapper} untuk pemilihan fitur untuk membuat IDS yang ringan. Mereka telah memodifikasi mutasi acak \emph{hill climbing} untuk mencari subset dan memodifikasi SVM sebagai pendekatan \emph{wrapper} untuk mengekstrak subset fitur yang dioptimalkan. Mereka telah melakukan eksperimen pada dataset KDD Cup '99.
+\cite{7881798} menggunakan Algoritma Genetika dan SVM untuk seleksi fitur. Tujuan mereka adalah untuk mengurangi dimensi data, meningkatkan tingkat positif benar, dan secara bersamaan mengurangi tingkat positif palsu. Algoritme genetika memberikan fitur \emph{fitness score} berdasarkan subset fitur optimal yang dibangun.
+\cite{7732199} juga telah menggunakan SVM untuk mengidentifikasi fungsi diskriminan untuk pengurangan fitur.
+\cite{articleusha} mengusulkan IDS berbasis \emph{gain} yang dinormalisasi yang terdiri dari dua modul. Modul pertama merupakan pemilihan fitur optimal menggunakan \emph{Particle Swarm Optimization} (PSO) dan modul kedua menggunakan \emph{support vector machine} untuk deteksi dan klasifikasi ancaman. Modul pertama melakukan pemeringkatan fitur menggunakan \emph{gain} yang dinormalisasi dan kemudian mengekstraksi fitur yang paling signifikan menggunakan pengelompokan semi-diawasi.\\
+\cite{7387736} telah memperkenalkan algoritma berbasis informasi timbal balik untuk memilih fitur yang optimal. Fitur utama dari makalah ini adalah bahwa ia berurusan dengan fitur data yang berkorelasi linier dan non-linier. Mereka telah melakukan evaluasi pada dataset KDDCup'99, NSL-KDD, dan CIC-IDS2017 \cite{aminanto2017weighted} telah mengusulkan metode pemilihan fitur berbobot untuk meningkatkan kinerja IDS. Pendekatan yang diusulkan menggunakan SVM, ANN, dan DT untuk seleksi fitur dan ANN untuk klasifikasi. Algoritme ML menetapkan bobot heuristik ke fitur berdasarkan kontribusinya dan subset fitur yang optimal tercapai.
+\cite{aslahi2016hybrid} juga menggunakan pendekatan yang sama seperti \cite{7881798} menggunakan algoritma genetika dan SVM.
+Senthilnayaki dkk. \cite{senthilnayaki2015intrusion} memberikan wawasan terperinci tentang pekerjaan sebelumnya yang dilakukan pada pemilihan fitur dan pendekatannya. Makalah ini membahas teknik pemilihan fitur berbasis filter dan teknik pemilihan fitur berbasis \emph{wrapper} dan hibrida. Penulis juga mengidentifikasi masalah kumpulan data KDD yang digunakan dalam 26 dari 28 makalah yang mereka periksa dan mendesak untuk menggunakan kumpulan data baru untuk serangan modern.\\
+Alazab dkk. \cite{alazab2012using} memberi peringkat fitur pada teknik berbasis filter dengan perolehan informasi. Menggunakan pohon keputusan untuk klasifikasi mereka telah mengurangi jumlah fitur menjadi 12 dari 41 dan karenanya mencapai peningkatan kinerja yang luar biasa.\\
+Khor dkk. \cite{khor2009feature} melakukan dua jenis teknik pemilihan fitur yang berbeda menggunakan dataset KDD 99. Mereka menggunakan \emph{Consistency Subset Evaluator} dan \emph{Correlation} untuk \emph{Feature Selection Subset Evaluator} untuk mengurangi fitur dari 41 menjadi 8.\\
+Zhou dkk. \cite{Zhou2020AnEN} mengusulkan \emph{Correlation-based-Feature-Selection-Bat-Algorithm} untuk mengatasi tantangan data yang tidak relevan dan berlebihan. Ini adalah algoritma heuristik yang mengevaluasi korelasi antara fitur dan mengekstrak subset fitur yang optimal. Penulis menggunakan set data KDDCup’99, NSL-KDD, dan CIC-IDS2017 untuk evaluasi.\\
+Mengingat studi di atas, disimpulkan bahwa ada kekurangan prosedur seleksi terstruktur dan daftar fitur yang teratur. Di bagian selanjutnya kami melakukan prosedur pemilihan fitur yang terstruktur dengan tepat dan akhirnya memberikan subset fitur terbaik untuk IDS.
+
+\section{Experimentation}
+
+\subsection{NSL KDD}
+
+Kami memilih dataset NSL KDD untuk percobaan kami \cite{tavallaee2009detailed}. Dataset NSL KDD dirancang untuk mengatasi masalah yang ditemukan dalam dataset KDD'99. Seperti dalam studi besar penelitian akademis, kami menggunakan dataset NSL-KDD yang sekarang menjadi data \emph{benchmark standar de facto}. Dataset umumnya digunakan untuk meningkatkan efektivitas tingkat deteksi intrusi. Melalui tujuan dataset adalah untuk membangun model yang efisien dan efektif untuk deteksi intrusi, namun dataset digunakan oleh studi yang sering untuk DL, dan komunitas data mining untuk tujuan validasi juga.\\
+Ini dapat dengan aman digunakan sebagai tolok ukur untuk pelatihan dan evaluasi model IDS. Juga, ada cukup catatan yang tersedia untuk pelatihan dan pengujian sehingga tidak perlu menggunakan teknik untuk menghasilkan catatan yang disintesis yang entah bagaimana mempengaruhi hasil.
+Dataset sering digunakan oleh komunitas riset \cite{Zhou2020AnEN, ibrahim2013comparison, aggarwal2015analysis, ingre2015performance, lakhina2010feature, revathi2013detailed, zuech2015survey, sharafaldin2018towards, protic2018review, dhanabal2015study}.
+
+Dataset terdiri dari 185559 \emph{record} dengan 92904 \emph{instance} anomali. Oleh karena itu, dataset hampir seimbang. Dataset memiliki 42 fitur sekaligus, 11 adalah kategorikal dan sisanya semuanya numerik. Di antara kategoris, lima fitur adalah biner-nominal. Semantik dataset dapat ditemukan melalui dokumentasinya.
+
+\subsection{Metodologi seleksi}
+
+Metodologi pemilihan fitur terdiri dari enam fase yang ditunjukkan pada Gambar 1.
+
+\emph{1) First phase::} Pada fase pertama, kami menghapus fitur yang tidak memiliki perubahan di seluruh instans 185559. Kami menemukan satu fitur tersebut yaitu Tidak ada perintah keluar.
+
+\emph{2) Second phase::} Pada fase kedua kami mencari fitur duplikat. Meskipun fase ini tidak menghilangkan fitur lebih lanjut, namun fase ini layak untuk dilakukan sebelum menerapkan teknik ML apa pun.
+
+\emph{3) Third phase::} Dalam fase ini kami melakukan dua eksperimen, satu khusus untuk fitur kategoris dari dataset sementara yang lain khusus untuk fitur numerik dari dataset. Oleh karena itu, kami membagi dataset menjadi dua. Yang pertama terdiri dari fitur kategoris sedangkan yang kedua terdiri dari fitur numerik. Kedua set data memiliki label yang sesuai juga.
+
+Dalam kumpulan data pembawa fitur kategorikal, kami menemukan kumpulan fitur kategoris yang paling tidak penting dengan menghitung \emph{rasio-gain} terhadap Label. Enam fitur tersebut ditemukan yaitu sebagai berikut;
+
+\begin{itemize}
+    \item \emph{land}
+    \item \emph{root shell}
+    \item \emph{is host login}
+    \item \emph{is guest login}
+    \item \emph{su attempted}
+    \item \emph{urgent}
+\end{itemize}
+
+Fitur-fitur numerik dataset pembawa dianalisis dengan korelasi satu sama lain. Kami melakukan korelasi peringkat \emph{Pearson} dan mengidentifikasi fitur yang memiliki korelasi 0,9 ke atas. Tabel I menunjukkan daftar fitur yang berkorelasi kuat.
+
+\begin{table}[htbp]
+    \caption{Fitur yang sangat berkorelasi}
+    \begin{center}
+    \begin{tabular}{l|l|l}
+    \hline
+    \multicolumn{1}{c|}{\textbf{Fitur Pertama}}&\multicolumn{1}{c|}{\textbf{Fitur Kedua}}&\multicolumn{1}{c}{\textbf{Korelasi}} \\
+    \hline
+    No of compromised& No of root& 1\\
+    \hline
+    server rate& server server rate& 0.99\\
+    \hline
+    server rate& destination host server rate& 0.97\\
+    \hline
+    server rate& destination host server server rate& 0.97\\
+    \hline
+    server server rate& destination host server rate& 0.97\\
+    \hline
+    server server rate& destination host server server rate& 0.98\\
+    \hline
+    error rate& server error rate& 0.98\\
+    \hline
+    error rate& destination host error rate& 0.91\\
+    \hline
+    error rate& destination host server error rate& 0.95\\
+    \hline
+    server error rate& destination host server error rate& 0.96\\
+    \hline
+    destination host server rate& destination host server server rate& 0.98\\
+    \hline
+    destination host error rate& destination host server error rate& 0.91\\
+    \hline
+    \end{tabular}
+    \label{tab1}
+    \end{center}
+\end{table}
+
+\noindent Dengan memperhatikan hal ini, kami menurunkan tujuh fitur berikut;
+
+\begin{itemize}
+    \item \emph{No of compromised}
+    \item \emph{server rate}
+    \item \emph{server server rate}
+    \item \emph{error rate}
+    \item \emph{server error rate}
+    \item \emph{destination host server rate}
+    \item \emph{destination host error rate}
+\end{itemize}
+
+\noindent Setelah menyelesaikan proses di atas, kami menggabungkan kembali kedua kumpulan data yang telah dibagi pada awal fase ketiga.
+
+\noindent Setelah menyelesaikan tiga fase di atas, kita memiliki 28 fitur, di mana lima adalah fitur kategoris, sedangkan 23 fitur lainnya bertipe numerik. Deskripsi statistik singkat dari fitur numerik dan kategoris masing-masing ditunjukkan pada Tabel II dan III.
+
+\vspace{6px}
+\begin{strip}
+    \begin{center}
+        \small Tabel II: Deskripsi statistik kumpulan fitur numerik dalam kumpulan data NSL-KDD\\
+        \vspace{10px}
+        \begin{tabular}{l|c|c|c|c|c|c|c|c}
+            \hline
+            \multicolumn{1}{c|}{\small \textbf{Fitur}}&\multicolumn{1}{c|}{\small \textbf{mean}}&\multicolumn{1}{c|}{\small \textbf{std}}&\multicolumn{1}{c|}{\small \textbf{min}}&\multicolumn{1}{c|}{\small \textbf{25\%}}&\multicolumn{1}{c|}{\small \textbf{50\%}}&\multicolumn{1}{c|}{\small \textbf{75\%}}&\multicolumn{1}{c|}{\small \textbf{max}}&\multicolumn{1}{c}{\small \textbf{Std}} \\
+            \hline
+            \small duration& \small 289.5& \small 2462.2& \small 0& \small 0& \small 0& \small 0& \small 57715& \small 2462.2\\
+            \hline
+            \small source bytes& \small 4.E+4& \small 5.E+6& \small 0& \small 0& \small 44& \small 276& \small 1.E+9& \small 5.E+6\\
+            \hline
+            \small destination bytes& \small 14230& \small 3.E+6& \small 0& \small 0& \small 0& \small 480& \small 1.E+8& \small 3.E+6\\
+            \hline
+            \small hot& \small 0.2& \small 2& \small 0& \small 0& \small 0& \small 0& \small 101& \small 2\\
+            \hline
+            \small No of failed logins& \small 0& \small 0.1& \small 0& \small 0& \small 0& \small 0& \small 5& \small 0.1\\
+            \hline
+            \small No of root& \small 0.3& \small 20.9& \small 0& \small 0& \small 0& \small 0& \small 7468& \small 20.9\\
+            \hline
+            \small No of file creations& \small 0& \small 0.6& \small 0& \small 0& \small 0& \small 0& \small 100& \small 0.6\\
+            \hline
+            \small No of shells& \small 0& \small 0& \small 0& \small 0& \small 0& \small 0& \small 5& \small 0\\
+            \hline
+            \small No of access files& \small 0& \small 0.1& \small 0& \small 0& \small 0& \small 0& \small 9& \small 0.1\\
+            \hline
+            \small No of outbound commands& \small 0& \small 0& \small 0& \small 0& \small 0& \small 0& \small 0& \small 0\\
+            \hline
+            \small count& \small 84.2& \small 119.2& \small 0& \small 2& \small 13& \small 141& \small 511& \small 119.2\\
+            \hline
+            \small server count& \small 29.5& \small 78.7& \small 0& \small 2& \small 7& \small 17& \small 511& \small 78.7\\
+            \hline
+            \small same server rate& \small 0.7& \small 0.4& \small 0& \small 0.1& \small 1& \small 1& \small 1& \small 0.4\\
+            \hline
+            \small diff server rate& \small 0.1& \small 0.2& \small 0& \small 0& \small 0& \small 0.06& \small 1& \small 0.2\\
+            \hline
+            \small server diff host rate& \small 0.1& \small 0.3& \small 0& \small 0& \small 0& \small 0& \small 1& \small 0.3\\
+            \hline
+            \small destination host count& \small 185.7& \small 97.9& \small 0& \small 92& \small 255& \small 255& \small 255& \small 97.9\\
+            \hline
+            \small destination host server count& \small 118.7& \small 110.9& \small 0& \small 11& \small 70& \small 255& \small 255& \small 110.9\\
+            \hline
+            \small destination host same server rate& \small 0.5& \small 0.4& \small 0& \small 0.5& \small 0.58& \small 255& \small 255& \small 0.4\\
+            \hline
+            \small destination host diff server rate& \small 0.1& \small 0.2& \small 0& \small 0& \small 0.02& \small 0.07& \small 1& \small 0.2\\
+            \hline
+            \small destination host same source port rate& \small 0.2& \small 0.3& \small 0& \small 0& \small 0& \small 0.06& \small 1& \small 0.3\\
+            \hline
+            \small destination host server diff host rate& \small 0& \small 0.1& \small 0& \small 0& \small 0& \small 0.01& \small 1& \small 0.1\\
+            \hline
+            \small destination host server server rate& \small 0.2& \small 0.4& \small 0& \small 0& \small 0& \small 0.31& \small 1& \small 0.4\\
+            \hline
+            \small destination host server error rate& \small 0.1& \small 0.3& \small 0& \small 0& \small 0& \small 0& \small 1& \small 0.3\\
+            \hline
+        \end{tabular}
+    \end{center}
+\end{strip}
+
+\begin{table}[htbp]
+    Tabel III: Deskripsi statistik dari kumpulan fitur kategori dalam kumpulan data NSL-KDD
+    \begin{center}
+    \begin{tabular}{l|c|c|c}
+    \hline
+    \multicolumn{1}{c|}{\textbf{Fitur}}&\multicolumn{1}{c|}{\textbf{Unik}}&\multicolumn{1}{c|}{\textbf{Top}}&\multicolumn{1}{c}{\textbf{Frekuensi}} \\
+    \hline
+    logged in& 2& 0& 112794\\
+    \hline
+    protocol type& 3& tcp& 150727\\
+    \hline
+    wrong fragment& 3& 0& 184045\\
+    \hline
+    flag& 11& SF& 112071\\
+    \hline
+    service& 70& http& 57594\\
+    \hline
+    \end{tabular}
+    \label{tab2}
+    \end{center}
+\end{table}
+
+\emph{4) Pilihan subset fitur acak:} Untuk menemukan subset terbaik dari fitur, \emph{wrapper} bisa menjadi pilihan. Namun, terkadang tidak praktis karena biaya komputasi yang tinggi \cite{2015surveys}.
+Dalam kasus kami ketika kami hanya memiliki 23 fitur, kami perlu mengevaluasi 8388608 himpunan bagian, yang tidak layak. Oleh karena itu, kami secara acak menghasilkan 5000 subset dan pindah ke fase berikutnya.
+
+\emph{5) Pembuatan model dan evaluasi hasil:} SVM digunakan untuk membangun model dan model dievaluasi menggunakan AuC. 5000 himpunan bagian yang dihasilkan pada fase terakhir, digunakan sebagai variabel independen. Setelah itu kita filter subset yang berhasil mencapai AuC sebesar 0.75. Gambar 2 menunjukkan daftar subset fitur terbaik.
+
+\subsection{Komputasi skor}
+
+Bagian akhir terdiri dari penilaian setiap fitur. Skoring dilakukan dengan menggunakan persamaan 1.
+
+\begin{equation}
+    Score(F)=\sum^{n}_{i=1} \frac{Accompaning F_i} {AUC_i} \text{ x } PresenceOfF_i
+    \label{eq}
+\end{equation}\vspace{6px}
+
+Gambar 3 menunjukkan daftar fitur yang diurutkan berdasarkan urutan signifikansinya dalam prediksi anomali dan lalu lintas jaringan normal.
+
+\section{Kesimpulan Dan Pekerjaan Masa Depan}
+
+Dalam makalah ini, kami memasukkan banyak penelitian tentang IDS saat ini. Lebih khusus lagi, pendekatan ML dan pemilihan fitur untuk meningkatkan pendekatan ML di IDS.
+Kami juga menguraikan pendekatan yang berbeda memiliki manfaat dan tantangan, sehingga kami harus berhati-hati dalam pemilihan pendekatan ML.
+Namun, masih ada kerangka kerja yang optimal untuk meningkatkan pemilihan fitur sistem IDS. Oleh karena itu, kami mengusulkan kerangka baru pemilihan fitur. Kerangka yang diusulkan sederhana untuk diimplementasikan.
+Kami secara empiris mengevaluasi kerangka kerja yang diusulkan pada dataset NSL-KDD.
+Hasil menunjukkan bahwa \emph{No of failed logins} adalah fitur terbaik diikuti oleh \emph{logged in} dan \emph{flag}.
+Selain itu, model komputasi dan \emph{time persist} (waktu bertahan) dapat dibangun dengan menambahkan lebih banyak fitur sesuai dengan urutan kepentingannya.
+Sekarang fitur yang dipilih dapat dimanfaatkan oleh komunitas pengembangan IDS untuk meningkatkan deteksi intrusi melalui ML.
+
+Pada artikel ini, kami memberikan tren dan kecenderungan keseluruhan komunitas ~IDS saat ini menggunakan ~ML. Na-
+
+\begin{strip}
+    \begin{multicols}{2}
+        \begin{flushleft}
+            \setlength{\tabcolsep}{5pt}
+            \renewcommand{\arraystretch}{0.69}
+            \begin{tabular}{l m{3mm} | m{3mm} | m{3mm} | m{3mm} | m{3mm} | m{3mm} | m{3mm} | m{3mm} | m{4mm} | m{3mm} | m{3mm} | m{3mm} | m{3mm} |}
+            \hline
+             \multicolumn{1}{|c|}{\tiny \textbf{Fitur}}&\multicolumn{12}{c|}{\tiny \textbf{Kehadiran fitur yang sesuai dalam daftar variabel independen}}&\multicolumn{1}{ m{3mm} |}{\tiny \textbf{Frek.}} \\
+            \hline
+            \multicolumn{1}{|l|}{\tiny logged in}& & \cellcolor[gray]{0}& & & \cellcolor[gray]{0}& & & & & \cellcolor[gray]{0}& & \cellcolor[gray]{0}& \cellcolor[gray]{0.7} \tiny ~4\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny protocol type}& & & & & & & & \cellcolor[gray]{0}& & & & & \cellcolor[gray]{0.7} \tiny ~1\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny wrong fragment}& & & & & & & \cellcolor[gray]{0}& & & & & & \cellcolor[gray]{0.7} \tiny ~1\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny flag}& & \cellcolor[gray]{0}& & \cellcolor[gray]{0}& & & & & & & & \cellcolor[gray]{0}& \cellcolor[gray]{0.7} \tiny ~3\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny service}& & & \cellcolor[gray]{0}& & & & \cellcolor[gray]{0}& & & & & & \cellcolor[gray]{0.7} \tiny ~2\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny duration}& & & & & & \cellcolor[gray]{0}& & & & & & & \cellcolor[gray]{0.7} \tiny ~1\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny Source bytes}& \cellcolor[gray]{0}& & & & & & & & \cellcolor[gray]{0}& & & & \cellcolor[gray]{0.7} \tiny ~2\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny destination bytes}& & \cellcolor[gray]{0}& & \cellcolor[gray]{0}& & & & & & & & \cellcolor[gray]{0}& \cellcolor[gray]{0.7} \tiny ~3\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny hot}& & & & & & & \cellcolor[gray]{0}& & & & & & \cellcolor[gray]{0.7} \tiny ~1\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny No failed logins}& & & \cellcolor[gray]{0}& \cellcolor[gray]{0}& & & \cellcolor[gray]{0}& & & \cellcolor[gray]{0}& & & \cellcolor[gray]{0.7} \tiny ~4\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny No root}& & & \cellcolor[gray]{0}& & & & \cellcolor[gray]{0}& & & & & & \cellcolor[gray]{0.7} \tiny ~2\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny No file creations}& & \cellcolor[gray]{0}& \cellcolor[gray]{0}& & & & & \cellcolor[gray]{0}& & & & & \cellcolor[gray]{0.7} \tiny ~3\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny No shells}& & & & & \cellcolor[gray]{0}& & \cellcolor[gray]{0}& & & & \cellcolor[gray]{0}& & \cellcolor[gray]{0.7} \tiny ~3\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny No access files}& & & & & \cellcolor[gray]{0}& & & & & \cellcolor[gray]{0}& & & \cellcolor[gray]{0.7} \tiny ~2\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny No outbound cmds}& & & & & \cellcolor[gray]{0}& & & & & \cellcolor[gray]{0}& & \cellcolor[gray]{0}& \cellcolor[gray]{0.7} \tiny ~3\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny count}& & & & \cellcolor[gray]{0}& & & & & & & & & \cellcolor[gray]{0.7} \tiny ~1\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny server count}& & & & & & \cellcolor[gray]{0}& & & \cellcolor[gray]{0}& & \cellcolor[gray]{0}& & \cellcolor[gray]{0.7} \tiny ~3\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny same server rate}& \cellcolor[gray]{0}& & & & & & & & & \cellcolor[gray]{0}& & & \cellcolor[gray]{0.7} \tiny ~2\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny diff server rate}& & & \cellcolor[gray]{0}& & & & & & & & & \cellcolor[gray]{0}& \cellcolor[gray]{0.7} \tiny ~2\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny server diff host rate}& & & & & & \cellcolor[gray]{0}& & \cellcolor[gray]{0}& & & & & \cellcolor[gray]{0.7} \tiny ~2\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny destination host count}& & & & & & & & & \cellcolor[gray]{0}& & & \cellcolor[gray]{0}& \cellcolor[gray]{0.7} \tiny ~2\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny destination host server count}& & & & \cellcolor[gray]{0}& & & & & & & & \cellcolor[gray]{0}& \cellcolor[gray]{0.7} \tiny ~2\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny destination host same server rate}& & & & & & & & & & & & \cellcolor[gray]{0}& \cellcolor[gray]{0.7} \tiny ~1\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny destination host diff server rate}& & \cellcolor[gray]{0}& & & & \cellcolor[gray]{0}& & & & & \cellcolor[gray]{0}& & \cellcolor[gray]{0.7} \tiny ~3\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny destination host same source port rate}& \cellcolor[gray]{0}& & & & & & & & & & \cellcolor[gray]{0}& & \cellcolor[gray]{0.7} \tiny ~2\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny destination host server diff host rate}& & & & & & & & & \cellcolor[gray]{0}& & \cellcolor[gray]{0}& \cellcolor[gray]{0}& \cellcolor[gray]{0.7} \tiny ~3\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny destination host server error rate}& & & & \cellcolor[gray]{0}& & & & & & & & & \cellcolor[gray]{0.7} \tiny ~1\\
+            \hline
+            \multicolumn{1}{|l|}{\tiny destination host server rerror rate}& & & & & & & & \cellcolor[gray]{0}& & & & & \cellcolor[gray]{0.7} \tiny ~1\\
+            \hline
+            \multicolumn{1}{|l|}{\cellcolor[gray]{0.7}\tiny Number of features}& \cellcolor[gray]{0.7} \tiny ~3& \cellcolor[gray]{0.7} \tiny ~5& \cellcolor[gray]{0.7} \tiny ~5& \cellcolor[gray]{0.7} \tiny ~6& \cellcolor[gray]{0.7} \tiny ~4& \cellcolor[gray]{0.7} \tiny ~4& \cellcolor[gray]{0.7} \tiny ~6& \cellcolor[gray]{0.7} \tiny ~4& \cellcolor[gray]{0.7} \tiny ~4& \cellcolor[gray]{0.7} \tiny ~5& \cellcolor[gray]{0.7} \tiny ~5& \cellcolor[gray]{0.7} \tiny ~9\\
+            \cline{1-13}
+            \multicolumn{1}{|l|}{\small \textbf{AuC}}& \tiny \textbf{0.9}& \tiny \textbf{0.95}& \tiny \textbf{0.92}& \tiny \textbf{0.95}& \tiny \textbf{0.9}& \tiny \textbf{0.89}& \tiny \textbf{0.93}& \tiny \textbf{0.75}& \tiny \textbf{0.923}& \tiny \textbf{0.91}& \tiny \textbf{0.93}& \tiny \textbf{0.9}\\
+            \cline{1-13}
+            \multicolumn{1}{l|}{ }& \tiny 0.30& \tiny 0.32& \tiny 0.31& \tiny 0.32& \tiny 0.30& \tiny 0.30& \tiny 0.31& \tiny 0.25& \tiny 0.31& \tiny 0.30& \tiny 0.31& \tiny 0.30\\
+            \cline{2-13}
+            \end{tabular}\vspace{10px}
+            Gambar 2: AUC dihitung di seluruh subset fitur bersama\\
+            dengan frekuensi fitur yang sesuai
+        \end{flushleft}
+        \begin{flushright}
+            \import{gambar/}{gambar3.pdf_tex}\\
+            Gambar 3: Daftar fitur dengan urutan\\
+            penurunan kepentingannya ~~~~~~~~~~~~~
+        \end{flushright}
+    \end{multicols}
+\end{strip}
+\noindent mun, masih banyak masalah dan tantangan terbuka yang harus diatasi di masa depan.
+Mempertimbangkan kumpulan data lain dengan variasi pengklasifikasi mungkin merupakan pekerjaan yang bijaksana untuk dilakukan.
+
+\bibliographystyle{IEEEtran}
+\bibliography{referensi.bib}
+
+\end{document}
